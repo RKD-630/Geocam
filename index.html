@@ -1,31 +1,53 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Geo Camera</title>
+<title>Geo Camera - Pro</title>
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+<div class="app-bg"></div>
 
-<h1>Geo Camera</h1>
+<div class="app-container">
+    <header class="app-header glass">
+        <h1><i class="fa-solid fa-location-dot"></i> Geo Camera</h1>
+        <p>Capture moments with precise location data</p>
+    </header>
 
-<div class="camera-box">
-
-<video id="video" autoplay></video>
-<canvas id="canvas"></canvas>
-
-<div class="buttons">
-<button id="startCamera">Start Camera</button>
-<button id="capture">Capture Photo</button>
-<button id="download">Download Photo</button>
+    <main class="main-content">
+        <div class="camera-wrapper glass">
+            <div class="video-container">
+                <video id="video" autoplay playsinline></video>
+                <div class="overlay-ui hidden" id="camera-overlay">
+                    <div class="geo-badge">
+                        <i class="fa-solid fa-satellite-dish"></i> <span id="gps-status">Acquiring GPS...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <canvas id="canvas" class="hidden"></canvas>
+            
+            <div class="controls">
+                <button class="btn btn-primary" id="startCamera">
+                    <i class="fa-solid fa-video"></i> Start Camera
+                </button>
+                <button class="btn btn-success hidden" id="capture">
+                    <i class="fa-solid fa-camera-retro"></i> Capture
+                </button>
+                <button class="btn btn-secondary hidden" id="download">
+                    <i class="fa-solid fa-download"></i> Save Photo
+                </button>
+            </div>
+        </div>
+    </main>
 </div>
-
-</div>
-
 <script src="script.js"></script>
-
 </body>
 </html>
