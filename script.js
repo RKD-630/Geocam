@@ -11,18 +11,24 @@ let latitude = "Detecting...";
 let longitude = "Detecting...";
 
 // Get GPS
-navigator.geolocation.getCurrentPosition(
-    function(position){
-        latitude = position.coords.latitude.toFixed(6);
-        longitude = position.coords.longitude.toFixed(6);
-        if(gpsStatus) gpsStatus.innerHTML = `GPS: ${latitude}, ${longitude}`;
-    }, 
-    function(error) {
-        latitude = "Unavailable";
-        longitude = "Unavailable";
-        if(gpsStatus) gpsStatus.innerHTML = `GPS Error`;
-    }
-);
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+        function(position){
+            latitude = position.coords.latitude.toFixed(6);
+            longitude = position.coords.longitude.toFixed(6);
+            if(gpsStatus) gpsStatus.innerHTML = `GPS: ${latitude}, ${longitude}`;
+        }, 
+        function(error) {
+            latitude = "Unavailable";
+            longitude = "Unavailable";
+            if(gpsStatus) gpsStatus.innerHTML = `GPS Error`;
+        }
+    );
+} else {
+    latitude = "Unsupported";
+    longitude = "Unsupported";
+    if(gpsStatus) gpsStatus.innerHTML = `GPS Unsupported`;
+}
 
 // Format Device name from User-Agent
 function getDeviceName() {
@@ -37,11 +43,23 @@ function getDeviceName() {
 }
 
 startBtn.onclick = async function(){
+    if (video.srcObject) {
+        // Stream already active, just switch UI back to camera mode
+        startBtn.classList.add("hidden");
+        captureBtn.classList.remove("hidden");
+        overlay.classList.remove("hidden");
+        canvas.classList.add("hidden");
+        videoContainer.classList.remove("hidden");
+        downloadBtn.classList.add("hidden");
+        return;
+    }
+
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'environment' }
         });
         video.srcObject = stream;
+        await video.play(); // Ensure video plays
         
         // Update UI
         startBtn.classList.add("hidden");
@@ -49,7 +67,9 @@ startBtn.onclick = async function(){
         overlay.classList.remove("hidden");
         canvas.classList.add("hidden");
         videoContainer.classList.remove("hidden");
+        downloadBtn.classList.add("hidden");
     } catch(err) {
+        console.error("Camera Error:", err);
         alert("Camera access denied or unavailable.");
     }
 };
@@ -140,7 +160,7 @@ async function drawOSMMap(ctx, lat, lon, destX, destY, destW, destH, zoom = 15) 
         for (let tx = minTileX; tx <= maxTileX; tx++) {
             promises.push(new Promise((resolve) => {
                 let img = new Image();
-                img.crossOrigin = "Anonymous";
+                img.crossOrigin = "anonymous";
                 img.onload = () => resolve({img, tx, ty});
                 img.onerror = () => resolve(null);
                 img.src = `https://a.tile.openstreetmap.org/${zoom}/${tx}/${ty}.png`;
@@ -180,8 +200,13 @@ async function drawOSMMap(ctx, lat, lon, destX, destY, destW, destH, zoom = 15) 
 }
 
 downloadBtn.onclick = function(){
-    let link = document.createElement("a");
-    link.download = "geo-photo.png";
-    link.href = canvas.toDataURL();
-    link.click();
+    try {
+        let link = document.createElement("a");
+        link.download = "geo-photo.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    } catch(err) {
+        console.error(err);
+        alert("Security Error: The browser blocked saving the image due to Cross-Origin restrictions on the map tiles. Try right-clicking or long-pressing the photo to save it instead.");
+    }
 };
