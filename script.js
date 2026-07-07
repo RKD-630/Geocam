@@ -6,28 +6,33 @@ const downloadBtn = document.getElementById("download");
 const overlay = document.getElementById("camera-overlay");
 const gpsStatus = document.getElementById("gps-status");
 const videoContainer = document.querySelector(".video-container");
+const switchBtn = document.getElementById("switchCamera");
+
+let currentFacingMode = 'environment';
 
 let latitude = "Detecting...";
 let longitude = "Detecting...";
 
-// Get GPS
-if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-        function(position){
-            latitude = position.coords.latitude.toFixed(6);
-            longitude = position.coords.longitude.toFixed(6);
-            if(gpsStatus) gpsStatus.innerHTML = `GPS: ${latitude}, ${longitude}`;
-        }, 
-        function(error) {
-            latitude = "Unavailable";
-            longitude = "Unavailable";
-            if(gpsStatus) gpsStatus.innerHTML = `GPS Error`;
-        }
-    );
-} else {
-    latitude = "Unsupported";
-    longitude = "Unsupported";
-    if(gpsStatus) gpsStatus.innerHTML = `GPS Unsupported`;
+function requestLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position){
+                latitude = position.coords.latitude.toFixed(6);
+                longitude = position.coords.longitude.toFixed(6);
+                if(gpsStatus) gpsStatus.innerHTML = `GPS: ${latitude}, ${longitude}`;
+            }, 
+            function(error) {
+                latitude = "Unavailable";
+                longitude = "Unavailable";
+                if(gpsStatus) gpsStatus.innerHTML = `GPS Error: ${error.message}`;
+            },
+            { enableHighAccuracy: true }
+        );
+    } else {
+        latitude = "Unsupported";
+        longitude = "Unsupported";
+        if(gpsStatus) gpsStatus.innerHTML = `GPS Unsupported`;
+    }
 }
 
 // Format Device name from User-Agent
@@ -42,11 +47,30 @@ function getDeviceName() {
     return "Unknown Device";
 }
 
+async function startVideoStream() {
+    try {
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: currentFacingMode }
+        });
+        video.srcObject = stream;
+        await video.play();
+    } catch(err) {
+        console.error("Camera Error:", err);
+        alert("Camera access denied or unavailable.");
+    }
+}
+
 startBtn.onclick = async function(){
-    if (video.srcObject) {
+    requestLocation();
+    
+    if (video.srcObject && video.srcObject.active) {
         // Stream already active, just switch UI back to camera mode
         startBtn.classList.add("hidden");
         captureBtn.classList.remove("hidden");
+        if(switchBtn) switchBtn.classList.remove("hidden");
         overlay.classList.remove("hidden");
         canvas.classList.add("hidden");
         videoContainer.classList.remove("hidden");
@@ -54,25 +78,24 @@ startBtn.onclick = async function(){
         return;
     }
 
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' }
-        });
-        video.srcObject = stream;
-        await video.play(); // Ensure video plays
-        
-        // Update UI
-        startBtn.classList.add("hidden");
-        captureBtn.classList.remove("hidden");
-        overlay.classList.remove("hidden");
-        canvas.classList.add("hidden");
-        videoContainer.classList.remove("hidden");
-        downloadBtn.classList.add("hidden");
-    } catch(err) {
-        console.error("Camera Error:", err);
-        alert("Camera access denied or unavailable.");
-    }
+    await startVideoStream();
+    
+    // Update UI
+    startBtn.classList.add("hidden");
+    captureBtn.classList.remove("hidden");
+    if(switchBtn) switchBtn.classList.remove("hidden");
+    overlay.classList.remove("hidden");
+    canvas.classList.add("hidden");
+    videoContainer.classList.remove("hidden");
+    downloadBtn.classList.add("hidden");
 };
+
+if(switchBtn) {
+    switchBtn.onclick = async function() {
+        currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+        await startVideoStream();
+    };
+}
 
 captureBtn.onclick = async function(){
     canvas.width = video.videoWidth || 640;
@@ -121,6 +144,7 @@ captureBtn.onclick = async function(){
     videoContainer.classList.add("hidden");
     canvas.classList.remove("hidden");
     captureBtn.classList.add("hidden");
+    if(switchBtn) switchBtn.classList.add("hidden");
     downloadBtn.classList.remove("hidden");
     startBtn.classList.remove("hidden");
     startBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retake Photo';
