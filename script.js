@@ -51,11 +51,31 @@ async function startVideoStream() {
     try {
         if (video.srcObject) {
             video.srcObject.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
         }
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: currentFacingMode }
-        });
+        
+        let stream;
+        try {
+            // Try exact facing mode first (fixes switching on many mobile devices)
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { exact: currentFacingMode } }
+            });
+        } catch(e) {
+            // Fallback for devices without exact facing modes (like desktops)
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: currentFacingMode }
+            });
+        }
+        
         video.srcObject = stream;
+        
+        // Mirror the preview if it's the front camera
+        if (currentFacingMode === 'user') {
+            video.style.transform = 'scaleX(-1)';
+        } else {
+            video.style.transform = 'scaleX(1)';
+        }
+        
         await video.play();
     } catch(err) {
         console.error("Camera Error:", err);
@@ -104,7 +124,13 @@ captureBtn.onclick = async function(){
     const ctx = canvas.getContext("2d");
     
     // Draw Video Frame
-    ctx.drawImage(video,0,0, canvas.width, canvas.height);
+    if (currentFacingMode === 'user') {
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // Reset transform before drawing text
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     let device = getDeviceName();
     let now = new Date();

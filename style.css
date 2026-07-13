@@ -160,5 +160,7 @@ canvas {
 .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); }
 .btn-success { background: var(--success); color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
 .btn-success:hover { background: var(--success-hover); transform: translateY(-2px); }
+.btn-info { background: #3b82f6; color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+.btn-info:hover { background: #2563eb; transform: translateY(-2px); }
 .btn-secondary { background: var(--secondary); color: white; border: 1px solid var(--glass-border); }
 .btn-secondary:hover { background: var(--secondary-hover); transform: translateY(-2px); }
