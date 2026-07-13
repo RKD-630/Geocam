@@ -158,11 +158,47 @@ captureBtn.onclick = async function(){
         let mapX = pad + boxWidth - mapSize - 20;
         let mapY = startY + 20;
         
-        try {
-            await drawOSMMap(ctx, latNum, lonNum, mapX, mapY, mapSize, mapSize, 14);
-        } catch(e) {
-            console.error("Failed to draw map", e);
-        }
+        let qrSize = 110;
+        let qrX = mapX - qrSize - 20;
+        let qrY = startY + 20;
+        
+        let mapPromise = (async () => {
+            try {
+                await drawOSMMap(ctx, latNum, lonNum, mapX, mapY, mapSize, mapSize, 14);
+            } catch(e) {
+                console.error("Failed to draw map", e);
+            }
+        })();
+        
+        let qrPromise = (async () => {
+            try {
+                let locationUrl = `https://maps.google.com/?q=${latNum},${lonNum}`;
+                let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(locationUrl)}`;
+                let img = new Image();
+                img.crossOrigin = "anonymous";
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                    img.src = qrUrl;
+                });
+                
+                ctx.save();
+                ctx.fillStyle = "#ffffff";
+                if(ctx.roundRect) {
+                    ctx.beginPath();
+                    ctx.roundRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 8);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
+                }
+                ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+                ctx.restore();
+            } catch(e) {
+                console.error("Failed to draw QR code", e);
+            }
+        })();
+
+        await Promise.all([mapPromise, qrPromise]);
     }
 };
 
