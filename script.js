@@ -153,111 +153,40 @@ captureBtn.onclick = async function(){
     let latNum = parseFloat(latitude);
     let lonNum = parseFloat(longitude);
     if (!isNaN(latNum) && !isNaN(lonNum)) {
-        // Place the map on the right side of the overlay box
-        let mapSize = 110;
-        let mapX = pad + boxWidth - mapSize - 20;
-        let mapY = startY + 20;
-        
+        // Place the QR code on the right side of the overlay box
         let qrSize = 110;
-        let qrX = mapX - qrSize - 20;
+        let qrX = pad + boxWidth - qrSize - 20;
         let qrY = startY + 20;
         
-        let mapPromise = (async () => {
-            try {
-                await drawOSMMap(ctx, latNum, lonNum, mapX, mapY, mapSize, mapSize, 14);
-            } catch(e) {
-                console.error("Failed to draw map", e);
+        try {
+            let locationUrl = `https://maps.google.com/?q=${latNum},${lonNum}`;
+            let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(locationUrl)}`;
+            let img = new Image();
+            img.crossOrigin = "anonymous";
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = qrUrl;
+            });
+            
+            ctx.save();
+            ctx.fillStyle = "#ffffff";
+            if(ctx.roundRect) {
+                ctx.beginPath();
+                ctx.roundRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 8);
+                ctx.fill();
+            } else {
+                ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
             }
-        })();
-        
-        let qrPromise = (async () => {
-            try {
-                let locationUrl = `https://maps.google.com/?q=${latNum},${lonNum}`;
-                let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(locationUrl)}`;
-                let img = new Image();
-                img.crossOrigin = "anonymous";
-                await new Promise((resolve, reject) => {
-                    img.onload = resolve;
-                    img.onerror = reject;
-                    img.src = qrUrl;
-                });
-                
-                ctx.save();
-                ctx.fillStyle = "#ffffff";
-                if(ctx.roundRect) {
-                    ctx.beginPath();
-                    ctx.roundRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 8);
-                    ctx.fill();
-                } else {
-                    ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
-                }
-                ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
-                ctx.restore();
-            } catch(e) {
-                console.error("Failed to draw QR code", e);
-            }
-        })();
-
-        await Promise.all([mapPromise, qrPromise]);
+            ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+            ctx.restore();
+        } catch(e) {
+            console.error("Failed to draw QR code", e);
+        }
     }
 };
 
-async function drawOSMMap(ctx, lat, lon, destX, destY, destW, destH, zoom = 15) {
-    let px = ((lon + 180) / 360) * Math.pow(2, zoom) * 256;
-    let latRad = (lat * Math.PI) / 180;
-    let py = ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * Math.pow(2, zoom) * 256;
-    
-    let viewX = px - destW / 2;
-    let viewY = py - destH / 2;
-    
-    let minTileX = Math.floor(viewX / 256);
-    let maxTileX = Math.floor((viewX + destW) / 256);
-    let minTileY = Math.floor(viewY / 256);
-    let maxTileY = Math.floor((viewY + destH) / 256);
-    
-    let promises = [];
-    for (let ty = minTileY; ty <= maxTileY; ty++) {
-        for (let tx = minTileX; tx <= maxTileX; tx++) {
-            promises.push(new Promise((resolve) => {
-                let img = new Image();
-                img.crossOrigin = "anonymous";
-                img.onload = () => resolve({img, tx, ty});
-                img.onerror = () => resolve(null);
-                img.src = `https://a.tile.openstreetmap.org/${zoom}/${tx}/${ty}.png`;
-            }));
-        }
-    }
-    
-    let tiles = await Promise.all(promises);
-    
-    ctx.save();
-    ctx.beginPath();
-    if(ctx.roundRect) ctx.roundRect(destX, destY, destW, destH, 8);
-    else ctx.rect(destX, destY, destW, destH);
-    ctx.clip();
-    
-    // Fill background in case tile is missing
-    ctx.fillStyle = "#e5e7eb";
-    ctx.fill();
-    
-    for (let tile of tiles) {
-        if (!tile) continue;
-        let drawX = destX + (tile.tx * 256 - viewX);
-        let drawY = destY + (tile.ty * 256 - viewY);
-        ctx.drawImage(tile.img, drawX, drawY, 256, 256);
-    }
-    
-    // Draw center marker
-    ctx.fillStyle = "#ef4444";
-    ctx.beginPath();
-    ctx.arc(destX + destW / 2, destY + destH / 2, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#ffffff";
-    ctx.stroke();
-    
-    ctx.restore();
-}
+
 
 downloadBtn.onclick = function(){
     try {
@@ -267,6 +196,6 @@ downloadBtn.onclick = function(){
         link.click();
     } catch(err) {
         console.error(err);
-        alert("Security Error: The browser blocked saving the image due to Cross-Origin restrictions on the map tiles. Try right-clicking or long-pressing the photo to save it instead.");
+        alert("Security Error: The browser blocked saving the image due to Cross-Origin restrictions on the QR code. Try right-clicking or long-pressing the photo to save it instead.");
     }
 };
