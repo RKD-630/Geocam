@@ -1,48 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Geo Camera - Pro</title>
-<!-- Google Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<!-- Font Awesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geo Camera - Location & Camera Access</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="app-bg"></div>
 
 <div class="app-container">
+    <!-- Location displayed prominently at the top of the application -->
     <header class="app-header glass">
-        <h1><i class="fa-solid fa-location-dot"></i> Geo Camera</h1>
-        <p>Capture moments with precise location data</p>
+        <div class="brand">
+            <i class="fa-solid fa-camera-retro brand-icon"></i>
+            <span class="brand-title">GeoCam</span>
+        </div>
+        <div class="top-location" id="top-location">
+            <i class="fa-solid fa-location-dot location-icon"></i>
+            <span id="location-name-display" class="location-text">Detecting Location...</span>
+            <span id="coordinates-display" class="coordinates-badge">Lat: -- | Lon: --</span>
+        </div>
     </header>
 
+    <!-- Main Content Area with Camera Preview (~80% height) -->
     <main class="main-content">
+        <!-- Permission Banner / Prompt -->
+        <div id="permission-banner" class="permission-banner glass hidden">
+            <i class="fa-solid fa-triangle-exclamation warning-icon"></i>
+            <div class="permission-text">
+                <strong id="permission-title">Camera & Location Access Required</strong>
+                <p id="permission-desc">Please grant camera and location permissions to access live camera preview and location tagging.</p>
+            </div>
+            <button class="btn btn-sm btn-primary" id="requestPermissionBtn">
+                <i class="fa-solid fa-key"></i> Grant Access
+            </button>
+        </div>
+
         <div class="camera-wrapper glass">
-            <div class="video-container">
-                <video id="video" autoplay playsinline></video>
+            <!-- 80% height camera preview container -->
+            <div class="video-container" id="preview-container">
+                <video id="video" autoplay playsinline class="hidden"></video>
+                <canvas id="canvas" class="hidden"></canvas>
+                
+                <!-- Overlay badge inside camera preview -->
                 <div class="overlay-ui hidden" id="camera-overlay">
                     <div class="geo-badge">
-                        <i class="fa-solid fa-satellite-dish"></i> <span id="gps-status">Acquiring GPS...</span>
+                        <i class="fa-solid fa-satellite-dish pulse-icon"></i>
+                        <span id="gps-status">Requesting GPS...</span>
+                    </div>
+                </div>
+
+                <!-- Initial placeholder before camera permission is granted -->
+                <div class="camera-placeholder" id="camera-placeholder">
+                    <div class="placeholder-content">
+                        <div class="icon-circle">
+                            <i class="fa-solid fa-video"></i>
+                        </div>
+                        <h3>Camera Access Required</h3>
+                        <p>Allow camera access to display the live 80% camera preview with real-time location.</p>
+                        <button class="btn btn-primary btn-lg" id="initialStartBtn">
+                            <i class="fa-solid fa-camera"></i> Allow Camera Access
+                        </button>
                     </div>
                 </div>
             </div>
-            
-            <canvas id="canvas" class="hidden"></canvas>
-            
-            <div class="controls">
-                <button class="btn btn-primary" id="startCamera">
+
+            <!-- Controls bar -->
+            <div class="controls-bar glass">
+                <button class="btn btn-primary hidden" id="startCamera">
                     <i class="fa-solid fa-video"></i> Start Camera
                 </button>
                 <button class="btn btn-info hidden" id="switchCamera">
-                    <i class="fa-solid fa-camera-rotate"></i> Switch
+                    <i class="fa-solid fa-camera-rotate"></i> Switch Camera
                 </button>
                 <button class="btn btn-success hidden" id="capture">
-                    <i class="fa-solid fa-camera-retro"></i> Capture
+                    <i class="fa-solid fa-camera"></i> Capture Photo
                 </button>
                 <button class="btn btn-secondary hidden" id="download">
                     <i class="fa-solid fa-download"></i> Save Photo
@@ -51,6 +90,7 @@
         </div>
     </main>
 </div>
+
 <script src="script.js"></script>
 </body>
 </html>
